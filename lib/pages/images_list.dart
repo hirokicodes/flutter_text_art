@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_text_art_filter/model/app_state_model.dart';
 import 'package:flutter_text_art_filter/model/saved_image.dart';
+import 'package:image_cropper/image_cropper.dart';
 
 class ImagesListPage extends StatefulWidget {
   @override
@@ -60,7 +62,12 @@ class _ImagesListPageState extends State<ImagesListPage> {
                         source: ImageSource.gallery);
                     if (imageFile != null) {
                       print('imageFile is not null');
-                      appState.addNewImageFile(imageFile);
+                      String imageFilePath = imageFile.path;
+                      File croppedImageFile = await ImageCropper.cropImage(
+                          sourcePath: imageFilePath);
+                      croppedImageFile != null
+                          ? appState.addNewImageFile(croppedImageFile)
+                          : appState.addNewImageFile(imageFile);
                     }
                   },
                 ),
