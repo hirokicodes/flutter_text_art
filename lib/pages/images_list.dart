@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:flutter_text_art_filter/model/app_state_model.dart';
 import 'package:flutter_text_art_filter/model/saved_image.dart';
-import 'package:image_cropper/image_cropper.dart';
+import 'package:flutter_text_art_filter/UI/gallery/gallery.dart';
+import 'package:flutter_text_art_filter/UI/gallery/gallery_item_thumbnail.dart';
 
 class ImagesListPage extends StatefulWidget {
   @override
@@ -26,17 +27,24 @@ class _ImagesListPageState extends State<ImagesListPage> {
                 itemCount: appState.savedImagesList.length,
                 itemBuilder: (BuildContext context, int index) {
                   SavedImage savedImage = appState.savedImagesList[index];
+
+                  List<File> imagesToShow =
+                      [savedImage.originalImage] + savedImage.textArtImagesList;
+
                   return Container(
                     margin: EdgeInsets.symmetric(vertical: 20),
                     height: 200,
                     child: ListView(
                       scrollDirection: Axis.horizontal,
-                      children: <Widget>[
-                            Image.file(savedImage.originalImage),
-                          ] +
-                          savedImage.textArtImagesList
-                              .map((imageFile) => Image.file(imageFile))
-                              .toList(),
+                      children: _mapIndexed(
+                        imagesToShow,
+                        (index, imageFile) => GalleryItemThumbnail(
+                          imageFile: imageFile,
+                          onTap: () {
+                            _openGallery(context, index, imagesToShow);
+                          },
+                        ),
+                      ).toList(),
                     ),
                   );
                 },
@@ -46,6 +54,7 @@ class _ImagesListPageState extends State<ImagesListPage> {
               children: <Widget>[
                 Spacer(),
                 FloatingActionButton(
+                  heroTag: null,
                   child: Icon(Icons.camera_alt),
                   onPressed: () {
                     print('pressed');
@@ -55,6 +64,7 @@ class _ImagesListPageState extends State<ImagesListPage> {
                   width: 5,
                 ),
                 FloatingActionButton(
+                  heroTag: null,
                   child: Icon(Icons.add_photo_alternate),
                   onPressed: () async {
                     print('pressed');
@@ -80,6 +90,32 @@ class _ImagesListPageState extends State<ImagesListPage> {
           ],
         );
       },
+    );
+  }
+
+  // Function to map through a list with access to index.
+  // Dart can't access index with map...
+  Iterable<E> _mapIndexed<E, T>(
+      Iterable<T> items, E Function(int index, T item) f) sync* {
+    int index = 0;
+    for (final item in items) {
+      yield f(index, item);
+      index++;
+    }
+  }
+
+  // Navigate to Gallery
+  void _openGallery(BuildContext context, int index, List<File> imageFiles) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return Gallery(
+            galleryItems: imageFiles,
+            initialIndex: index,
+          );
+        },
+      ),
     );
   }
 }
