@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:image_cropper/image_cropper.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_text_art_filter/model/app_state_model.dart';
 import 'package:flutter_text_art_filter/model/saved_image.dart';
 import 'package:flutter_text_art_filter/UI/gallery/gallery.dart';
 import 'package:flutter_text_art_filter/UI/gallery/gallery_item_thumbnail.dart';
+import 'package:flutter_text_art_filter/UI/form.dart';
 
 class ImagesListPage extends StatefulWidget {
   @override
@@ -20,6 +22,19 @@ class _ImagesListPageState extends State<ImagesListPage> {
   Widget build(BuildContext context) {
     return Consumer<AppStateModel>(
       builder: (context, appState, child) {
+        void _handleGetImage(ImageSource imageSource) async {
+          File imageFile = await ImagePicker.pickImage(source: imageSource);
+          if (imageFile != null) {
+            print('imageFile is not null');
+            String imageFilePath = imageFile.path;
+            File croppedImageFile =
+                await ImageCropper.cropImage(sourcePath: imageFilePath);
+            croppedImageFile != null
+                ? appState.addNewImageFile(croppedImageFile)
+                : appState.addNewImageFile(imageFile);
+          }
+        }
+
         return Column(
           children: <Widget>[
             Expanded(
@@ -32,19 +47,41 @@ class _ImagesListPageState extends State<ImagesListPage> {
                       [savedImage.originalImage] + savedImage.textArtImagesList;
 
                   return Container(
-                    margin: EdgeInsets.symmetric(vertical: 20),
-                    height: 200,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: _mapIndexed(
-                        imagesToShow,
-                        (index, imageFile) => GalleryItemThumbnail(
-                          imageFile: imageFile,
-                          onTap: () {
-                            _openGallery(context, index, imagesToShow);
-                          },
+                    margin: EdgeInsets.symmetric(vertical: 10),
+                    child: Column(
+                      children: <Widget>[
+                        Container(
+                          margin: EdgeInsets.symmetric(horizontal: 5),
+                          child: Row(
+                            children: <Widget>[
+                              Text(_formatDate(savedImage.dateAdded)),
+                              Spacer(),
+                              IconButton(
+                                icon: Icon(Icons.image),
+                                onPressed: () {
+                                  print('pressed');
+                                  _showCreateTextArtDialog(savedImage);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      ).toList(),
+                        Container(
+                          height: 200,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: _mapIndexed(
+                              imagesToShow,
+                              (index, imageFile) => GalleryItemThumbnail(
+                                imageFile: imageFile,
+                                onTap: () {
+                                  _openGallery(context, index, imagesToShow);
+                                },
+                              ),
+                            ).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -57,7 +94,7 @@ class _ImagesListPageState extends State<ImagesListPage> {
                   heroTag: null,
                   child: Icon(Icons.camera_alt),
                   onPressed: () {
-                    print('pressed');
+                    _handleGetImage(ImageSource.camera);
                   },
                 ),
                 SizedBox(
@@ -66,19 +103,8 @@ class _ImagesListPageState extends State<ImagesListPage> {
                 FloatingActionButton(
                   heroTag: null,
                   child: Icon(Icons.add_photo_alternate),
-                  onPressed: () async {
-                    print('pressed');
-                    File imageFile = await ImagePicker.pickImage(
-                        source: ImageSource.gallery);
-                    if (imageFile != null) {
-                      print('imageFile is not null');
-                      String imageFilePath = imageFile.path;
-                      File croppedImageFile = await ImageCropper.cropImage(
-                          sourcePath: imageFilePath);
-                      croppedImageFile != null
-                          ? appState.addNewImageFile(croppedImageFile)
-                          : appState.addNewImageFile(imageFile);
-                    }
+                  onPressed: () {
+                    _handleGetImage(ImageSource.gallery);
                   },
                 ),
                 SizedBox(
@@ -116,6 +142,21 @@ class _ImagesListPageState extends State<ImagesListPage> {
           );
         },
       ),
+    );
+  }
+
+  String _formatDate(DateTime dateTime) {
+    DateFormat formatter = DateFormat('yyyy-MM-dd');
+    return formatter.format(dateTime);
+  }
+
+  void _showCreateTextArtDialog(SavedImage savedImage) {
+    print('_showCreateTextArtDialog');
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return CreateTextArtForm(savedImage: savedImage);
+      },
     );
   }
 }

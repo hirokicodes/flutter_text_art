@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:image/image.dart' as img;
 import 'dart:io';
-
 import 'package:path_provider/path_provider.dart';
-
+import 'package:flutter_text_art_filter/constants.dart';
 import 'package:flutter_text_art_filter/model/saved_image.dart';
 
 class AppStateModel extends foundation.ChangeNotifier {
@@ -22,8 +21,6 @@ class AppStateModel extends foundation.ChangeNotifier {
     dir
         .list(recursive: true, followLinks: false)
         .listen((FileSystemEntity entity) {
-      // print(entity.path);
-
       if (entity is Directory) {
         String dirName = _nameFromPath(entity.path);
         int millisecondsFromEpoch = int.parse(dirName);
@@ -75,11 +72,6 @@ class AppStateModel extends foundation.ChangeNotifier {
     SavedImage imageFileSavedImage =
         SavedImage(dateAdded: dateAdded, originalImage: originalImage);
     savedImagesList.add(imageFileSavedImage);
-
-    img.Image textArtImageBuffer = await createTextArtImage(originalImage);
-    File textArtImageFile =
-        await _saveImageBufferToPng(textArtImageBuffer, newDirName);
-    imageFileSavedImage.textArtImagesList.add(textArtImageFile);
     notifyListeners();
   }
 
@@ -96,14 +88,13 @@ class AppStateModel extends foundation.ChangeNotifier {
   }
 
   // Return Text Art Image as Image Buffer from an image file
-  Future<img.Image> createTextArtImage(File imageFile) async {
-    String chars =
-        "\$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+  Future<img.Image> createTextArtImage(
+      File imageFile, double scaleFactor, int rgbVal, CharsSet charsSet) async {
+    String chars = charsSets[charsSet].split('').reversed.join('');
     List<String> charsList = chars.split('').toList();
     int charLength = charsList.length;
     double interval = charLength / 256;
 
-    double scaleFactor = 0.09;
     int oneCharWidth = 10;
     int oneCharHeight = 18;
 
@@ -129,7 +120,7 @@ class AppStateModel extends foundation.ChangeNotifier {
 
     print('resized width: $resizedWidth');
     print('resized height: $resizedHeight');
-    img.fill(outputImageBuffer, img.getColor(0, 0, 0));
+    img.fill(outputImageBuffer, img.getColor(rgbVal, rgbVal, rgbVal));
     for (int i = 0; i < resizedHeight; i++) {
       for (int j = 0; j < resizedWidth; j++) {
         int pixel32 = resizedImageBuffer.getPixelSafe(j, i);
@@ -141,5 +132,17 @@ class AppStateModel extends foundation.ChangeNotifier {
     }
 
     return outputImageBuffer;
+  }
+
+  void createAndSaveTextArt(SavedImage savedImage, double scaleFactor,
+      int rgbVal, CharsSet charsSet) async {
+    File imageFile = savedImage.originalImage;
+    img.Image textArtImageBuffer =
+        await createTextArtImage(imageFile, scaleFactor, rgbVal, charsSet);
+    String dirName = savedImage.dateAdded.millisecondsSinceEpoch.toString();
+    File textArtImageFile =
+        await _saveImageBufferToPng(textArtImageBuffer, dirName);
+    savedImage.textArtImagesList.add(textArtImageFile);
+    notifyListeners();
   }
 }
