@@ -13,8 +13,7 @@ class CreateTextArtForm extends StatefulWidget {
 }
 
 class _CreateTextArtFormState extends State<CreateTextArtForm> {
-  List<double> scaleFactorOptions =
-      List<double>.generate(10, (i) => (i + 1) / 10);
+  List<double> scaleFactorOptions = Constants.scaleFactorOptions;
   double chosenScaleFactor = 0.1;
   List<int> backgroundShadeOptions = List<int>.generate(256, (i) => i);
   int chosenRgbVal = 0;
