@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart' as foundation;
 import 'package:image/image.dart' as img;
-import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:flutter_text_art_filter/constants.dart';
 import 'package:flutter_text_art_filter/model/saved_image.dart';
 
@@ -76,14 +77,17 @@ class AppStateModel extends foundation.ChangeNotifier {
   }
 
   // Save image buffer as PNG and return the saved image file
-  Future<File> _saveImageBufferToPng(
-      img.Image imageBuffer, String dirName) async {
+  Future<File> _saveImageBufferToPng(img.Image imageBuffer, String dirName,
+      {bool isTextArt = false}) async {
     Directory dir = await getApplicationDocumentsDirectory();
     DateTime dateAdded = DateTime.now();
     String newFileName = dateAdded.millisecondsSinceEpoch.toString();
     File('${dir.path}/$dirName/$newFileName.png')
         .writeAsBytesSync(img.encodePng(imageBuffer));
     File savedFile = File('${dir.path}/$dirName/$newFileName.png');
+    if (isTextArt) {
+      await GallerySaver.saveImage(savedFile.path);
+    }
     return savedFile;
   }
 
@@ -140,8 +144,9 @@ class AppStateModel extends foundation.ChangeNotifier {
     img.Image textArtImageBuffer =
         await createTextArtImage(imageFile, scaleFactor, rgbVal, charsSet);
     String dirName = savedImage.dateAdded.millisecondsSinceEpoch.toString();
-    File textArtImageFile =
-        await _saveImageBufferToPng(textArtImageBuffer, dirName);
+    File textArtImageFile = await _saveImageBufferToPng(
+        textArtImageBuffer, dirName,
+        isTextArt: true);
     savedImage.textArtImagesList.add(textArtImageFile);
     notifyListeners();
   }
