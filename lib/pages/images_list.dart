@@ -25,13 +25,12 @@ class _ImagesListPageState extends State<ImagesListPage> {
         void _handleGetImage(ImageSource imageSource) async {
           File imageFile = await ImagePicker.pickImage(source: imageSource);
           if (imageFile != null) {
-            print('imageFile is not null');
             String imageFilePath = imageFile.path;
             File croppedImageFile =
                 await ImageCropper.cropImage(sourcePath: imageFilePath);
-            croppedImageFile != null
-                ? appState.addNewImageFile(croppedImageFile)
-                : appState.addNewImageFile(imageFile);
+            if (croppedImageFile != null) {
+              appState.addNewImageFile(croppedImageFile);
+            }
           }
         }
 
@@ -57,7 +56,7 @@ class _ImagesListPageState extends State<ImagesListPage> {
                               Text(_formatDate(savedImage.dateAdded)),
                               Spacer(),
                               IconButton(
-                                icon: Icon(Icons.image),
+                                icon: Icon(Icons.more_horiz),
                                 onPressed: () {
                                   print('pressed');
                                   _showCreateTextArtDialog(savedImage);

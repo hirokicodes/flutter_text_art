@@ -19,6 +19,7 @@ class _GalleryState extends State<Gallery> {
   @override
   void initState() {
     currentIndex = widget.initialIndex;
+    print(currentIndex);
     super.initState();
   }
 
@@ -30,6 +31,7 @@ class _GalleryState extends State<Gallery> {
 
   @override
   Widget build(BuildContext context) {
+    PageController _pageController = PageController(initialPage: currentIndex);
     return Scaffold(
       body: Container(
         constraints:
@@ -40,6 +42,7 @@ class _GalleryState extends State<Gallery> {
             PhotoViewGallery.builder(
               scrollPhysics: BouncingScrollPhysics(),
               itemCount: widget.galleryItems.length,
+              pageController: _pageController,
               builder: _buildItem,
               onPageChanged: onPageChanged,
             ),
